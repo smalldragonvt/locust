@@ -145,7 +145,7 @@ def request_stats():
             "median_response_time": s.median_response_time,
             "ninetieth_response_time": s.get_response_time_percentile(0.9),
             "ninetyfiveth_response_time": s.get_response_time_percentile(0.95),
-            "ninetienineth_response_time": s.get_response_time_percentile(0.99),
+            "ninetienineth_response_time": s.get_response_time_percentile(0.999),
             "avg_content_length": s.avg_content_length,
         })
 
@@ -162,8 +162,8 @@ def request_stats():
         report["fail_ratio"] = runners.locust_runner.stats.total.fail_ratio
         report["current_response_time_percentile_99"] = \
             runners.locust_runner.stats.total.get_current_response_time_percentile(0.99)
-        report["current_response_time_percentile_95"] = \
-            runners.locust_runner.stats.total.get_current_response_time_percentile(0.95)
+        report["current_response_time_percentile_90"] = \
+            runners.locust_runner.stats.total.get_current_response_time_percentile(0.9)
         report["current_response_time_percentile_50"] = \
             runners.locust_runner.stats.total.get_current_response_time_percentile(0.5)
 
