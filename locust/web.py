@@ -43,14 +43,15 @@ def index():
         host = runners.locust_runner.locust_classes[0].host
     else:
         host = None
-    
+
     return render_template("index.html",
-        state=runners.locust_runner.state,
-        is_distributed=is_distributed,
-        user_count=runners.locust_runner.user_count,
-        version=version,
-        host=host
-    )
+                           state=runners.locust_runner.state,
+                           is_distributed=is_distributed,
+                           user_count=runners.locust_runner.user_count,
+                           version=version,
+                           host=host
+                           )
+
 
 @app.route('/swarm', methods=["POST"])
 def swarm():
@@ -61,16 +62,19 @@ def swarm():
     runners.locust_runner.start_hatching(locust_count, hatch_rate)
     return jsonify({'success': True, 'message': 'Swarming started'})
 
+
 @app.route('/stop')
 def stop():
     runners.locust_runner.stop()
-    return jsonify({'success':True, 'message': 'Test stopped'})
+    return jsonify({'success': True, 'message': 'Test stopped'})
+
 
 @app.route("/stats/reset")
 def reset_stats():
     runners.locust_runner.stats.reset_all()
     return "ok"
-    
+
+
 @app.route("/stats/requests/csv")
 def request_stats_csv():
     response = make_response(requests_csv())
@@ -79,6 +83,7 @@ def request_stats_csv():
     response.headers["Content-type"] = "text/csv"
     response.headers["Content-disposition"] = disposition
     return response
+
 
 @app.route("/stats/distribution/csv")
 def distribution_stats_csv():
@@ -89,11 +94,12 @@ def distribution_stats_csv():
     response.headers["Content-disposition"] = disposition
     return response
 
+
 @app.route('/stats/requests')
 @memoize(timeout=DEFAULT_CACHE_TIME, dynamic_timeout=True)
 def request_stats():
     stats = []
-    
+
     for s in chain(sort_stats(runners.locust_runner.request_stats), [runners.locust_runner.stats.total]):
         stats.append({
             "method": s.method,
@@ -115,23 +121,28 @@ def request_stats():
     report = {"stats": stats[:500], "errors": errors[:500]}
 
     if stats:
-        report["total_rps"] = stats[len(stats)-1]["current_rps"]
+        report["total_rps"] = stats[len(stats) - 1]["current_rps"]
         report["fail_ratio"] = runners.locust_runner.stats.total.fail_ratio
-        report["current_response_time_percentile_95"] = runners.locust_runner.stats.total.get_current_response_time_percentile(0.95)
-        report["current_response_time_percentile_50"] = runners.locust_runner.stats.total.get_current_response_time_percentile(0.5)
-    
+        report["current_response_time_percentile_99"] = \
+            runners.locust_runner.stats.total.get_current_response_time_percentile(0.99)
+        report["current_response_time_percentile_95"] = \
+            runners.locust_runner.stats.total.get_current_response_time_percentile(0.95)
+        report["current_response_time_percentile_50"] = \
+            runners.locust_runner.stats.total.get_current_response_time_percentile(0.5)
+
     is_distributed = isinstance(runners.locust_runner, MasterLocustRunner)
     if is_distributed:
         slaves = []
         for slave in runners.locust_runner.clients.values():
-            slaves.append({"id":slave.id, "state":slave.state, "user_count": slave.user_count})
+            slaves.append({"id": slave.id, "state": slave.state, "user_count": slave.user_count})
 
         report["slaves"] = slaves
-    
+
     report["state"] = runners.locust_runner.state
     report["user_count"] = runners.locust_runner.user_count
 
     return jsonify(report)
+
 
 @app.route("/exceptions")
 def exceptions():
@@ -141,10 +152,11 @@ def exceptions():
                 "count": row["count"],
                 "msg": row["msg"],
                 "traceback": row["traceback"],
-                "nodes" : ", ".join(row["nodes"])
+                "nodes": ", ".join(row["nodes"])
             } for row in six.itervalues(runners.locust_runner.exceptions)
         ]
     })
+
 
 @app.route("/exceptions/csv")
 def exceptions_csv():
@@ -154,7 +166,7 @@ def exceptions_csv():
     for exc in six.itervalues(runners.locust_runner.exceptions):
         nodes = ", ".join(exc["nodes"])
         writer.writerow([exc["count"], exc["msg"], exc["traceback"], nodes])
-    
+
     data.seek(0)
     response = make_response(data.read())
     file_name = "exceptions_{0}.csv".format(time())
@@ -162,6 +174,7 @@ def exceptions_csv():
     response.headers["Content-type"] = "text/csv"
     response.headers["Content-disposition"] = disposition
     return response
+
 
 def start(locust, options):
     pywsgi.WSGIServer((options.web_host, options.port),
